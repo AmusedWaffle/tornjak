@@ -1,0 +1,23 @@
+From the start of the semester until about Friday, 9/30, I've just been doing prep work for getting tornjak, Kubernetes, Docker, and Golang all set up and running on my machine.
+
+The initial setup Maia set up and had us go through can be found here [https://docs.google.com/document/d/1gvbbhIlbKQenD-G4Ft3RsDWT5dF8Otm-GE5TehKjqE8/edit?tab=t.0], and then the subsequent steps and resources she gave to us can be found here [https://docs.google.com/document/d/11t1FlXRFiT_E0FQSTN3i4ZBTZfM0AuXeuugCCgob5Rs/edit?tab=t.0]. I’ve gone through the entirety of both of these documents she’s given us, at which point I moved on to an actual issue from the repo.
+
+NOTE: I know both of those links are Google doc links, they're just documents that Maia gave us that are in a Shared Google Drive we all have access to. If you need me to, I'll go back through and transfer everything onto a text file here, but right now that seems like more effort than it's worth. Those docs aren't going anywhere.
+
+I only encountered two issues during the set up process. One was during the quickstart, which can be found on that "initial setup" document and I've also linked here: [https://github.com/spiffe/tornjak/tree/dev/docs/quickstart]. That issue was just copying the "kubectl exec -it $(kubectl get pods -o=jsonpath='{.items[0].metadata.name}' \
+   -l app=client)  -- /opt/spire/bin/spire-agent api fetch -socketPath /run/spire/sockets/agent.sock" command wrong (I was just missing the last two letters of "sock" at the end). This issue was resolved during the 9/13 meeting with Maia.
+
+My second issue occurred when I was building the docker images for the tornjak frontend, backend, and manager (the details of which are at the bottom of the "Debugging Resources" google doc). The manager image wouldn't build without Golang installed, but the 2 Golang installs I tried both failed. I then tried again on WSL (via Ubuntu) and that still didn't work. During the 9/27 meeting, Maia helped me remove all remaining traces of Go from my machine, and then install the Linux installer for Go and follow the instructions for Linux from the Go website [https://go.dev/doc/install]. Finally, I then used Vim to edit my /~.profile and add the export PATH variable.
+
+Afterwards, I helped both Matt, Kai, and Collin with their issues, among which was getting Go installed. 
+
+Following that, it was only last week, 10/7, that I started working on an issue from the Tornjak repo, issue 519 [https://github.com/spiffe/tornjak/issues/519], with Collin from my group. My fork of the tornjak repo for working on that issue can be found here: [https://github.com/AmusedWaffle/tornjak/tree/Mid-Semester-Commit]. Before really starting on that issue, however, both Collin and I are doing a Golang tutorial to learn Go before diving into the refactoring issue. The tutorial I've been following is: [https://go.dev/tour/].
+
+Mine and Collin’s plan for this issue is to: 
+1. Learn Golang from a tutorial
+2. Comment every function in the /api/agents/handlers.go file, as almost nothing is commented - we need to understand what everything does before attempting to find other ways to accomplish the same thing
+3. Then start refactoring functions, where one of us would start at the top of the file and the other would start at the bottom
+We are hoping to have at least 3 functions refactored by the end of the semester.
+
+
+
