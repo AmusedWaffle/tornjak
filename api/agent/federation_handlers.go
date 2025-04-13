@@ -14,30 +14,40 @@ func (s *Server) federationList(w http.ResponseWriter, r *http.Request) {
 	var input ListFederationRelationshipsRequest
 	buf := new(strings.Builder)
 
-	n, err, data := copyIntoBuff(buf, w, r, "Error: ")
-	if n == 0 && data == "err" { return }
+	n, err := io.Copy(buf, r.Body)
+	if err != nil {
+		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
+	data := buf.String()
 
 	if n == 0 {
 		input = ListFederationRelationshipsRequest{}
 	} else {
 		err := json.Unmarshal([]byte(data), &input)
-        if (isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest)) {
-            return
-        }
+		if err != nil {
+			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+			retError(w, emsg, http.StatusBadRequest)
+			return
+		}
 	}
 
 	ret, err := s.ListFederationRelationships(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-    if isHttpError(err, w, "Error: ", http.StatusInternalServerError) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusInternalServerError)
+		return
+	}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 	err = je.Encode(ret)
-
-    if isHttpError(err, w, "Error: ", http.StatusBadRequest) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
 }
 
 func (s *Server) federationCreate(w http.ResponseWriter, r *http.Request) {
@@ -45,32 +55,42 @@ func (s *Server) federationCreate(w http.ResponseWriter, r *http.Request) {
 	var rawInput trustdomain.BatchCreateFederationRelationshipRequest
 	buf := new(strings.Builder)
 
-	n, err, data := copyIntoBuff(buf, w, r, "Error parsing data: ")
-	if n == 0 && data == "err" { return }
+	n, err := io.Copy(buf, r.Body)
+	if err != nil {
+		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
+	data := buf.String()
 
 	if n == 0 {
 		input = CreateFederationRelationshipRequest{}
 	} else {
 		// required to use protojson because of oneof field
 		err := protojson.Unmarshal([]byte(data), &rawInput)
-        if isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest) {
-            return;
-        }
-
+		if err != nil {
+			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+			retError(w, emsg, http.StatusBadRequest)
+			return
+		}
 		input = CreateFederationRelationshipRequest(rawInput) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
 	}
 
 	ret, err := s.CreateFederationRelationship(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-    if isHttpError(err, w, "Error: ", http.StatusInternalServerError) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusInternalServerError)
+		return
+	}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 	err = je.Encode(ret)
-    if isHttpError(err, w, "Error: ", http.StatusBadRequest) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
 }
 
 func (s *Server) federationUpdate(w http.ResponseWriter, r *http.Request) {
@@ -78,58 +98,80 @@ func (s *Server) federationUpdate(w http.ResponseWriter, r *http.Request) {
 	var rawInput trustdomain.BatchUpdateFederationRelationshipRequest
 	buf := new(strings.Builder)
 
-	n, err, data := copyIntoBuff(buf, w, r, "Error parsing data: ")
-	if n == 0 && data == "err" { return }
+	n, err := io.Copy(buf, r.Body)
+	if err != nil {
+		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
+	data := buf.String()
 
 	if n == 0 {
 		input = UpdateFederationRelationshipRequest{}
 	} else {
 		err := protojson.Unmarshal([]byte(data), &rawInput)
-        if isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest) {
-            return
-        }
+		if err != nil {
+			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+			retError(w, emsg, http.StatusBadRequest)
+			return
+		}
 		input = UpdateFederationRelationshipRequest(rawInput) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
 
 	}
 
 	ret, err := s.UpdateFederationRelationship(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-    if isHttpError(err, w, "Error: ", http.StatusInternalServerError) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusInternalServerError)
+		return
+	}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 	err = je.Encode(ret)
-    if isHttpError(err, w, "Error: ", http.StatusBadRequest) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
 }
 
 func (s *Server) federationDelete(w http.ResponseWriter, r *http.Request) {
 	var input DeleteFederationRelationshipRequest
 	buf := new(strings.Builder)
 
-	n, err, data := copyIntoBuff(buf, w, r, "Error parsing data: ")
-	if n == 0 && data == "err" { return }
+	n, err := io.Copy(buf, r.Body)
+	if err != nil {
+		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
+	data := buf.String()
 
 	if n == 0 {
 		input = DeleteFederationRelationshipRequest{}
 	} else {
 		err := json.Unmarshal([]byte(data), &input)
-        if isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest) {
-            return
-        }
+		if err != nil {
+			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
+			retError(w, emsg, http.StatusBadRequest)
+			return
+		}
 	}
 
 	ret, err := s.DeleteFederationRelationship(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-    if isHttpError(err, w, "Error: ", http.StatusInternalServerError) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusInternalServerError)
+		return
+	}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 	err = je.Encode(ret)
-    if isHttpError(err, w, "Error: ", http.StatusBadRequest) {
-        return
-    }
+	if err != nil {
+		emsg := fmt.Sprintf("Error: %v", err.Error())
+		retError(w, emsg, http.StatusBadRequest)
+		return
+	}
 }
