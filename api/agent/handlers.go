@@ -122,21 +122,15 @@ func (s *Server) debugServer(w http.ResponseWriter, r *http.Request) {
 	input := DebugServerRequest{} // HARDCODED INPUT because there are no fields to DebugServerRequest
 
 	ret, err := s.DebugServer(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-	if err != nil {
-		emsg := fmt.Sprintf("Error: %v", err.Error())
-		retError(w, emsg, http.StatusInternalServerError)
-		return
-	}
+	isErr := isHttpError(err, w, "Error: ", http.StatusInternalServerError)
+	if isErr {return}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 
 	err = je.Encode(ret)
-	if err != nil {
-		emsg := fmt.Sprintf("Error: %v", err.Error())
-		retError(w, emsg, http.StatusBadRequest)
-		return
-	}
+	isErr = isHttpError(err, w, "Error: ", http.StatusBadRequest)
+	if isErr {return}
 }
 
 func (s *Server) agentList(w http.ResponseWriter, r *http.Request) {
