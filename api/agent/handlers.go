@@ -35,10 +35,11 @@ func isHttpError(err error, w http.ResponseWriter, emsg string, status int) (boo
 	3 -> "Error listing agents: %v", err.Error()
 */
 func copyIntoBuff(buf *strings.Builder, w http.ResponseWriter, r *http.Request, emsg string) (int64, error, string){
-	fmt.Print("made it 2")
 	n, err := io.Copy(buf, r.Body)
-	isErr := isHttpError(err, w, emsg + fmt.Sprintf("%v", err.Error()), http.StatusBadRequest)
-	if isErr {return 0, err, "err"}
+	if err != nil {
+        isHttpError(err, w, emsg + fmt.Sprintf("%v", err.Error()), http.StatusBadRequest)
+        return 0, err, "err"
+    }
 	data := buf.String()
 
 	return n, err, data
@@ -137,13 +138,8 @@ func (s *Server) agentList(w http.ResponseWriter, r *http.Request) {
 	var input ListAgentsRequest
 	buf := new(strings.Builder)
 
-	n, err := io.Copy(buf, r.Body)
-	if err != nil {
-		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
-		retError(w, emsg, http.StatusBadRequest)
-		return
-	}
-	data := buf.String()
+	n, err, data := copyIntoBuff(buf, w, r, "Error parsing data: ")
+	if n == 0 && data == "err" { return }
 
 	if n == 0 {
 		input = ListAgentsRequest{}
