@@ -34,15 +34,15 @@ func isHttpError(err error, w http.ResponseWriter, emsg string, status int) (boo
 	2 -> "Error: %v", err.Error()
 	3 -> "Error listing agents: %v", err.Error()
 */
-func copyIntoBuff(buf *strings.Builder, w http.ResponseWriter, r *http.Request, emsg string) (int64, error, string){
+func copyIntoBuff(buf *strings.Builder, w http.ResponseWriter, r *http.Request, emsg string) (int64, string, error){
 	n, err := io.Copy(buf, r.Body)
 	if err != nil {
         isHttpError(err, w, emsg + fmt.Sprintf("%v", err.Error()), http.StatusBadRequest)
-        return 0, err, "err"
+        return 0, "err", err
     }
 	data := buf.String()
 
-	return n, err, data
+	return n, data, err
 }
 
 // Gets called from GetRouter func in server.go
@@ -138,36 +138,27 @@ func (s *Server) agentList(w http.ResponseWriter, r *http.Request) {
 	var input ListAgentsRequest
 	buf := new(strings.Builder)
 
-	n, err, data := copyIntoBuff(buf, w, r, "Error parsing data: ")
-	if n == 0 && data == "err" { return }
+	n, data, err := copyIntoBuff(buf, w, r, "Error parsing data: ")
+	if n == 0 && err != nil { return }
 
 	if n == 0 {
 		input = ListAgentsRequest{}
 	} else {
 		err := json.Unmarshal([]byte(data), &input)
-		if err != nil {
-			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
-			retError(w, emsg, http.StatusBadRequest)
-			return
-		}
+		isErr := isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest)
+		if isErr {return}
 	}
 
 	ret, err := s.ListAgents(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-	if err != nil {
-		emsg := fmt.Sprintf("Error: %v", err.Error())
-		retError(w, emsg, http.StatusInternalServerError)
-		return
-	}
+	isErr := isHttpError(err, w, "Error: ", http.StatusBadRequest)
+	if isErr {return}
 
 	cors(w, r)
 	je := json.NewEncoder(w)
 
 	err = je.Encode(ret)
-	if err != nil {
-		emsg := fmt.Sprintf("Error: %v", err.Error())
-		retError(w, emsg, http.StatusBadRequest)
-		return
-	}
+	isErr = isHttpError(err, w, "Error: ", http.StatusBadRequest)
+	if isErr {return}
 
 }
 
@@ -175,13 +166,8 @@ func (s *Server) agentBan(w http.ResponseWriter, r *http.Request) {
 	var input BanAgentRequest
 	buf := new(strings.Builder)
 
-	n, err := io.Copy(buf, r.Body)
-	if err != nil {
-		emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
-		retError(w, emsg, http.StatusBadRequest)
-		return
-	}
-	data := buf.String()
+	n, data, err := copyIntoBuff(buf, w, r, "Error parsing data: ")
+	if n == 0 && err != nil { return }
 
 	if n == 0 {
 		emsg := "Error: no data provided"
@@ -189,28 +175,19 @@ func (s *Server) agentBan(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		err := json.Unmarshal([]byte(data), &input)
-		if err != nil {
-			emsg := fmt.Sprintf("Error parsing data: %v", err.Error())
-			retError(w, emsg, http.StatusBadRequest)
-			return
-		}
+		isErr := isHttpError(err, w, "Error parsing data: ", http.StatusBadRequest)
+		if isErr {return}
 	}
 
 	err = s.BanAgent(input) //nolint:govet //Ignoring mutex (not being used) - sync.Mutex by value is unused for linter govet
-	if err != nil {
-		emsg := fmt.Sprintf("Error listing agents: %v", err.Error())
-		retError(w, emsg, http.StatusInternalServerError)
-		return
-	}
+	isErr := isHttpError(err, w, "Error listing agents: ", http.StatusInternalServerError)
+	if isErr {return}
 
 	cors(w, r)
 	_, err = w.Write([]byte("SUCCESS"))
 
-	if err != nil {
-		emsg := fmt.Sprintf("Error: %v", err.Error())
-		retError(w, emsg, http.StatusBadRequest)
-		return
-	}
+	isErr = isHttpError(err, w, "Error: ", http.StatusBadRequest)
+	if isErr {return}
 
 }
 
